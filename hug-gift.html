@@ -47,6 +47,55 @@
       position: absolute;
     }
 
+    .poke-wrap {
+      position: relative;
+      display: inline-block;
+      width: min(260px, 82vw);
+      margin: 0 auto clamp(0.75rem, 3vw, 1.5rem);
+    }
+
+    .poke-wrap .gift-media {
+      width: 100%;
+      margin: 0;
+    }
+
+    .hearts {
+      position: absolute;
+      inset: -12%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .heart {
+      position: absolute;
+      font-size: clamp(18px, 5vw, 28px);
+      line-height: 1;
+      color: var(--heart-color, #ff6b8a);
+      text-shadow: 0 2px 10px color-mix(in srgb, var(--heart-color, #ff6b8a) 55%, transparent);
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.2);
+    }
+
+    .poke-wrap.surprise .heart {
+      animation: heartBurst 1.25s ease-out both;
+      animation-delay: var(--delay, 0s);
+    }
+
+    @keyframes heartBurst {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.15);
+      }
+      22% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--tx, 0px) * 0.5), calc(-50% + var(--ty, 0px) * 0.5)) scale(1.25);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0.95);
+      }
+    }
+
     .gift-media {
       width: min(260px, 82vw);
       max-height: min(280px, 38dvh);
@@ -149,8 +198,13 @@
         width: min(220px, 88vw);
       }
 
+      .poke-wrap,
       .gift-media {
         width: min(220px, 76vw);
+        max-height: 34dvh;
+      }
+
+      .poke-wrap .gift-media {
         max-height: 34dvh;
       }
     }
@@ -202,7 +256,9 @@
 </head>
 <body>
   <section class="screen" id="screen1">
-    <img class="gift-media" id="gift1" src="assets/hug.gif.png" alt="Two bears hugging">
+    <div class="poke-wrap">
+      <img class="gift-media" id="gift1" src="assets/poke.png" alt="Bear poking another bear's cheek">
+    </div>
     <h1 id="question">Do you need a hug?</h1>
     <div class="buttons">
       <button class="btn btn-ah" id="btnAh" type="button">ah</button>
@@ -211,17 +267,29 @@
   </section>
 
   <section class="screen second-screen" id="screen2">
-    <img class="gift-media" id="gift2" src="assets/poke.png" alt="Bear poking another bear's cheek">
+    <div class="poke-wrap" id="hugWrap">
+      <div class="hearts" id="hugHearts" aria-hidden="true"></div>
+      <img class="gift-media" id="gift2" src="assets/hug.gif.png" alt="Two bears hugging">
+    </div>
     <h1>Come here</h1>
+    <button class="btn btn-la" id="btnReplay" type="button">n3awdoha?</button>
   </section>
 
   <script>
     const btnAh = document.getElementById("btnAh");
     const btnLa = document.getElementById("btnLa");
+    const btnReplay = document.getElementById("btnReplay");
     const screen1 = document.getElementById("screen1");
     const screen2 = document.getElementById("screen2");
     const gift1 = document.getElementById("gift1");
     const question = document.getElementById("question");
+    const hugWrap = document.getElementById("hugWrap");
+    const hugHearts = document.getElementById("hugHearts");
+    const HEART_COLORS = [
+      "#ff6b8a", "#ff9f43", "#ffd166", "#4ecdc4", "#5fa8ff", "#b084f5",
+      "#f77fb3", "#7ad66f", "#ff7fae", "#80b8ff", "#ffcd6b", "#9d7cff",
+    ];
+    const HEART_COUNT = 36;
     let ahGrown = false;
     let hugAccepted = false;
     let growthProgress = 0;
@@ -350,14 +418,78 @@
       }
     });
 
+    function resetScreen1() {
+      ahGrown = false;
+      growthProgress = 0;
+      ahStart = null;
+
+      btnAh.classList.remove("growing");
+      btnLa.classList.remove("docked", "faded");
+
+      ["top", "left", "width", "height", "fontSize", "borderRadius"].forEach((prop) => {
+        btnAh.style[prop] = "";
+      });
+      ["top", "left"].forEach((prop) => {
+        btnLa.style[prop] = "";
+      });
+
+      gift1.style.opacity = "";
+      question.style.opacity = "";
+    }
+
+    function buildHugHearts() {
+      if (!hugHearts) return;
+
+      hugHearts.innerHTML = "";
+      for (let i = 0; i < HEART_COUNT; i++) {
+        const angle = (i / HEART_COUNT) * Math.PI * 2 - Math.PI / 2;
+        const ring = i % 2 === 0 ? 50 : 38;
+        const left = 50 + Math.cos(angle) * ring;
+        const top = 50 + Math.sin(angle) * ring;
+        const tx = Math.cos(angle) * (ring === 50 ? 32 : 22);
+        const ty = Math.sin(angle) * (ring === 50 ? 32 : 22);
+        const delay = (i / HEART_COUNT) * 0.9;
+
+        const heart = document.createElement("span");
+        heart.className = "heart";
+        heart.textContent = "♥";
+        heart.style.setProperty("--heart-color", HEART_COLORS[i % HEART_COLORS.length]);
+        heart.style.left = left + "%";
+        heart.style.top = top + "%";
+        heart.style.setProperty("--tx", tx + "px");
+        heart.style.setProperty("--ty", ty + "px");
+        heart.style.setProperty("--delay", delay + "s");
+        hugHearts.appendChild(heart);
+      }
+    }
+
+    function triggerHugSurprise() {
+      if (!hugWrap) return;
+      hugWrap.classList.remove("surprise");
+      void hugWrap.offsetWidth;
+      hugWrap.classList.add("surprise");
+    }
+
+    buildHugHearts();
+
     function showHugScreen() {
       if (hugAccepted) return;
       hugAccepted = true;
+      resetScreen1();
       screen1.classList.add("hidden");
       screen2.classList.add("visible");
+      triggerHugSurprise();
+    }
+
+    function restartFromBeginning() {
+      hugAccepted = false;
+      resetScreen1();
+      screen2.classList.remove("visible");
+      screen1.classList.remove("hidden");
     }
 
     btnAh.addEventListener("click", showHugScreen);
+    btnReplay.addEventListener("click", restartFromBeginning);
   </script>
 </body>
 </html>
