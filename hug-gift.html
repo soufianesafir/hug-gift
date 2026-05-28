@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Do you need a hug?</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #ffeef5 0%, #fff5e6 50%, #f0e8ff 100%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding:
+        env(safe-area-inset-top, 0)
+        env(safe-area-inset-right, 0)
+        env(safe-area-inset-bottom, 0)
+        env(safe-area-inset-left, 0);
+    }
+
+    .screen {
+      text-align: center;
+      padding: clamp(1rem, 4vw, 2rem);
+      max-width: min(420px, 100%);
+      width: 100%;
+      transition: opacity 0.5s ease;
+    }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    .gift-media {
+      width: min(260px, 82vw);
+      max-height: min(280px, 38dvh);
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto clamp(0.75rem, 3vw, 1.5rem);
+      border-radius: 8px;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 10px 24px rgba(74, 53, 72, 0.12));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0.6); opacity: 0; }
+      70% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .screen.second-screen .gift-media {
+      animation: pop 0.6s ease forwards, float 3s ease-in-out 0.6s infinite;
+    }
+
+    h1 {
+      font-size: clamp(1.2rem, 5.2vw, 1.6rem);
+      font-weight: 600;
+      color: #4a3548;
+      margin-bottom: clamp(1rem, 4vw, 2rem);
+      line-height: 1.35;
+      padding: 0 0.25rem;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(0.65rem, 3vw, 1rem);
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      min-height: 48px;
+      width: 100%;
+      padding: 0 0.25rem;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      font-size: clamp(1.05rem, 4.5vw, 1.25rem);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      z-index: 1;
+      min-height: 48px;
+      min-width: 72px;
+      padding: 0.85rem clamp(1.4rem, 6vw, 2.2rem);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .btn-ah {
+      background: linear-gradient(145deg, #ff8fab, #ff6b8a);
+      color: white;
+      box-shadow: 0 6px 20px rgba(255, 107, 138, 0.45);
+    }
+
+    .btn-la {
+      background: linear-gradient(145deg, #b8a9e8, #9b8ad4);
+      color: white;
+      box-shadow: 0 6px 20px rgba(155, 138, 212, 0.4);
+    }
+
+    .btn-la.docked {
+      position: fixed;
+      z-index: 1001;
+      margin: 0;
+      transition: top 0.4s ease, left 0.4s ease;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .btn:hover:not(.growing) {
+        transform: scale(1.05);
+      }
+    }
+
+    .btn:active:not(.growing) {
+      transform: scale(0.96);
+    }
+
+    @media (max-width: 380px) {
+      .buttons {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: min(220px, 88vw);
+      }
+
+      .gift-media {
+        width: min(220px, 76vw);
+        max-height: 34dvh;
+      }
+    }
+
+    .btn-ah.growing {
+      position: fixed;
+      z-index: 1000;
+      margin: 0;
+      padding: 0;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: none;
+      transition:
+        top 0.4s ease,
+        left 0.4s ease,
+        width 0.4s ease,
+        height 0.4s ease,
+        font-size 0.4s ease,
+        border-radius 0.4s ease;
+    }
+
+    .btn-la.faded {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .content-dimmed {
+      opacity: 0.15;
+      transition: opacity 0.6s ease;
+    }
+
+    #screen2 {
+      display: none;
+    }
+
+    #screen2.visible {
+      display: block;
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <section class="screen" id="screen1">
+    <img class="gift-media" id="gift1" src="assets/hug.gif.png" alt="Two bears hugging">
+    <h1 id="question">Do you need a hug?</h1>
+    <div class="buttons">
+      <button class="btn btn-ah" id="btnAh" type="button">ah</button>
+      <button class="btn btn-la" id="btnLa" type="button">la</button>
+    </div>
+  </section>
+
+  <section class="screen second-screen" id="screen2">
+    <img class="gift-media" id="gift2" src="assets/poke.png" alt="Bear poking another bear's cheek">
+    <h1>Come here</h1>
+  </section>
+
+  <script>
+    const btnAh = document.getElementById("btnAh");
+    const btnLa = document.getElementById("btnLa");
+    const screen1 = document.getElementById("screen1");
+    const screen2 = document.getElementById("screen2");
+    const gift1 = document.getElementById("gift1");
+    const question = document.getElementById("question");
+    let ahGrown = false;
+    let hugAccepted = false;
+    let growthProgress = 0;
+    let ahStart = null;
+    const GROWTH_STEP = 0.1;
+
+    function getViewport() {
+      const vv = window.visualViewport;
+      if (vv) {
+        return {
+          top: vv.offsetTop,
+          left: vv.offsetLeft,
+          width: vv.width,
+          height: vv.height,
+        };
+      }
+      return {
+        top: 0,
+        left: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+    }
+
+    function getAhEnd() {
+      const vp = getViewport();
+      return {
+        top: vp.top,
+        left: vp.left,
+        width: vp.width,
+        height: vp.height,
+        fontSize: Math.min(vp.width, vp.height) * 0.22,
+        radius: 0,
+      };
+    }
+
+    function initAhGrowth() {
+      if (ahStart) return;
+
+      const rect = btnAh.getBoundingClientRect();
+      ahStart = {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        fontSize: parseFloat(getComputedStyle(btnAh).fontSize) || 20,
+        radius: 10,
+      };
+
+      btnAh.classList.add("growing");
+      btnLa.classList.add("docked");
+      applyAhGrowth(growthProgress);
+    }
+
+    function positionLaBesideAh() {
+      const ah = btnAh.getBoundingClientRect();
+      const vp = getViewport();
+      const gap = 12;
+      const laW = btnLa.offsetWidth;
+      const laH = btnLa.offsetHeight;
+
+      let left = ah.right + gap;
+      let top = ah.top + (ah.height - laH) / 2;
+
+      if (left + laW > vp.left + vp.width - 8) {
+        left = ah.left - gap - laW;
+      }
+
+      left = Math.max(vp.left + 8, Math.min(left, vp.left + vp.width - laW - 8));
+      top = Math.max(vp.top + 8, Math.min(top, vp.top + vp.height - laH - 8));
+
+      btnLa.style.top = top + "px";
+      btnLa.style.left = left + "px";
+    }
+
+    function applyAhGrowth(progress) {
+      const end = getAhEnd();
+      const t = Math.min(1, progress);
+      const s = ahStart;
+
+      btnAh.style.top = s.top + (end.top - s.top) * t + "px";
+      btnAh.style.left = s.left + (end.left - s.left) * t + "px";
+      btnAh.style.width = s.width + (end.width - s.width) * t + "px";
+      btnAh.style.height = s.height + (end.height - s.height) * t + "px";
+      btnAh.style.fontSize = s.fontSize + (end.fontSize - s.fontSize) * t + "px";
+      btnAh.style.borderRadius = s.radius + (end.radius - s.radius) * t + "px";
+
+      if (btnLa.classList.contains("docked")) {
+        positionLaBesideAh();
+      }
+
+      const dim = 1 - t * 0.85;
+      gift1.style.opacity = dim;
+      question.style.opacity = dim;
+    }
+
+    function growAhStep() {
+      if (ahGrown || hugAccepted) return;
+
+      initAhGrowth();
+      growthProgress = Math.min(1, growthProgress + GROWTH_STEP);
+      applyAhGrowth(growthProgress);
+
+      if (growthProgress >= 1) {
+        ahGrown = true;
+        btnLa.classList.add("faded");
+        gift1.style.opacity = "0.15";
+        question.style.opacity = "0.15";
+      }
+    }
+
+    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+    if (canHover) {
+      btnLa.addEventListener("mouseenter", growAhStep);
+    } else {
+      btnLa.addEventListener("click", (e) => {
+        e.preventDefault();
+        growAhStep();
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      if (ahStart && growthProgress > 0 && !ahGrown) {
+        applyAhGrowth(growthProgress);
+      }
+    });
+
+    function showHugScreen() {
+      if (hugAccepted) return;
+      hugAccepted = true;
+      screen1.classList.add("hidden");
+      screen2.classList.add("visible");
+    }
+
+    btnAh.addEventListener("click", showHugScreen);
+  </script>
+</body>
+</html>
